@@ -10,14 +10,3 @@ body {
   margin: 0;
   padding: 0;
 }
-
-/* Add smooth tap highlight effect for iOS */
-@supports (-webkit-touch-callout: none) {
-  .active-tap {
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-  }
-
-  .active-tap:active {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
-}
