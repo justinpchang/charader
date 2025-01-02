@@ -43,6 +43,10 @@ interface GameState {
   promptCategories: Map<string, string>;
 }
 
+interface CountdownProps {
+  onComplete: () => void;
+}
+
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -368,6 +372,66 @@ const GameSetup: React.FC<GameSetupProps> = ({ onStartGame, isLoading }) => {
   );
 };
 
+const Countdown: React.FC<CountdownProps> = ({ onComplete }) => {
+  const [count, setCount] = useState(3);
+
+  const playCountdownSound = (number: number) => {
+    const audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    if (number > 0) {
+      // Higher pitched "tick" sound
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + 0.1
+      );
+    } else {
+      // Lower pitched "start" sound
+      oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(
+        880,
+        audioContext.currentTime + 0.1
+      );
+      gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + 0.2
+      );
+    }
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + (number > 0 ? 0.1 : 0.2));
+  };
+
+  useEffect(() => {
+    if (count > 0) {
+      playCountdownSound(count);
+      const timer = setTimeout(() => setCount(count - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      playCountdownSound(0);
+      onComplete();
+    }
+  }, [count, onComplete]);
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-purple-50">
+      <div className="text-center">
+        <div className="text-8xl font-bold text-purple-800 animate-bounce">
+          {count > 0 ? count : "GO!"}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const GameScreen: React.FC<GameScreenProps> = ({
   duration,
   initialPrompts,
@@ -383,6 +447,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
     isLoadingMore: false,
     promptCategories: new Map(),
   });
+  const [showCountdown, setShowCountdown] = useState(true);
 
   useEffect(() => {
     // Check if we need to fetch more prompts
@@ -549,6 +614,8 @@ const GameScreen: React.FC<GameScreenProps> = ({
   };
 
   useEffect(() => {
+    if (showCountdown) return;
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -565,10 +632,14 @@ const GameScreen: React.FC<GameScreenProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [onGameEnd, results]);
+  }, [onGameEnd, results, showCountdown]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
+
+  if (showCountdown) {
+    return <Countdown onComplete={() => setShowCountdown(false)} />;
+  }
 
   return (
     <div className="flex flex-col items-center justify-between h-screen bg-purple-50">
@@ -743,8 +814,33 @@ const App: React.FC = () => {
     setResults([]);
   };
 
+  const preventScrolling = (e: TouchEvent) => {
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    // Prevent scrolling/bouncing on iOS
+    document.addEventListener("touchmove", preventScrolling, {
+      passive: false,
+    });
+
+    // Handle iOS PWA status bar height
+    const root = document.documentElement;
+    const setAppHeight = () => {
+      root.style.setProperty("--app-height", `${window.innerHeight}px`);
+    };
+
+    window.addEventListener("resize", setAppHeight);
+    setAppHeight();
+
+    return () => {
+      document.removeEventListener("touchmove", preventScrolling);
+      window.removeEventListener("resize", setAppHeight);
+    };
+  }, []);
+
   return (
-    <div className="h-screen">
+    <div className="h-[var(--app-height)] overflow-hidden">
       {gameState === "setup" && (
         <GameSetup onStartGame={startGame} isLoading={isLoading} />
       )}
