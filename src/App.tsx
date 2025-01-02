@@ -2,6 +2,7 @@
 import { RotateCcw, Timer } from "lucide-react";
 import OpenAI from "openai";
 import React, { useEffect, useState } from "react";
+import { ALL_CATEGORIES, getRandomOptionsForCategory } from "./categories";
 
 interface Category {
   id: string;
@@ -29,6 +30,7 @@ interface GameScreenProps {
   initialPrompts: string[];
   category: Category;
   onGameEnd: (results: GameResult[]) => void;
+  promptCategories: Record<string, string>;
 }
 
 interface GameEndProps {
@@ -40,7 +42,7 @@ interface GameState {
   availablePrompts: string[];
   usedPrompts: string[];
   isLoadingMore: boolean;
-  promptCategories: Map<string, string>;
+  promptCategories: Record<string, string>;
 }
 
 interface CountdownProps {
@@ -67,74 +69,6 @@ const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true, // Note: In production, you should make API calls from your backend
 });
-
-const ALL_CATEGORIES: Category[] = [
-  {
-    id: "misc",
-    name: "🎲 All Categories",
-    prompt: "mixed variety of charades-friendly topics",
-  },
-  {
-    id: "movies",
-    name: "🎬 TV Shows & Movies",
-    prompt: "popular TV shows and movies",
-  },
-  {
-    id: "disney",
-    name: "🏰 Disney Characters",
-    prompt: "Disney and Pixar characters",
-  },
-  {
-    id: "superheroes",
-    name: "🦸‍♂️ Superheroes",
-    prompt: "popular superheroes (especially Marvel)",
-  },
-  {
-    id: "celebrities",
-    name: "⭐ Celebrities",
-    prompt: "famous celebrities",
-  },
-  {
-    id: "animals",
-    name: "🦁 Animals",
-    prompt: "animals",
-  },
-  {
-    id: "food",
-    name: "🍕 Food",
-    prompt: "ingredients and dishes",
-  },
-  {
-    id: "songs",
-    name: "🎵 Pop Songs",
-    prompt: "popular songs",
-  },
-  {
-    id: "accents",
-    name: "🗣️ Accents & Impressions",
-    prompt: "accents and character impressions",
-  },
-  {
-    id: "historical",
-    name: "👑 Historical Figures",
-    prompt: "famous historical figures",
-  },
-  {
-    id: "geography",
-    name: "🌎 Geography",
-    prompt: "U.S. States, Cities, and Countries",
-  },
-  {
-    id: "books",
-    name: "📚 Books",
-    prompt: "book titles",
-  },
-  {
-    id: "custom",
-    name: "🎯 Custom",
-    prompt: "",
-  },
-];
 
 const getRandomPastelTheme = () => {
   const themes = [
@@ -222,7 +156,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onStartGame, isLoading }) => {
   };
 
   const handleStartGame = () => {
-    const selectedCategoryObjects = ALL_CATEGORIES.filter((cat) =>
+    const selectedCategoryObjects: Category[] = ALL_CATEGORIES.filter((cat) =>
       selectedCategories.has(cat.id)
     );
 
@@ -437,6 +371,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   initialPrompts,
   category,
   onGameEnd,
+  promptCategories,
 }) => {
   const [timeLeft, setTimeLeft] = useState<number>(duration * 60);
   const [currentPromptIndex, setCurrentPromptIndex] = useState<number>(0);
@@ -445,7 +380,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
     availablePrompts: initialPrompts,
     usedPrompts: [],
     isLoadingMore: false,
-    promptCategories: new Map(),
+    promptCategories,
   });
   const [showCountdown, setShowCountdown] = useState(true);
 
@@ -644,7 +579,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-purple-50">
       <div className="w-full p-4 bg-purple-600 text-white">
-        <div className="flex justify-center items-center text-2xl">
+        <div className="flex justify-center items-center text-4xl">
           <Timer className="mr-2" />
           {minutes}:{seconds.toString().padStart(2, "0")}
         </div>
@@ -664,9 +599,11 @@ const GameScreen: React.FC<GameScreenProps> = ({
               {gameState.availablePrompts[currentPromptIndex]}
             </h1>
             <div className="text-xl mt-6 text-purple-600 opacity-75">
-              {gameState.promptCategories.get(
-                gameState.availablePrompts[currentPromptIndex]
-              )}
+              {
+                gameState.promptCategories[
+                  gameState.availablePrompts[currentPromptIndex]
+                ]
+              }
             </div>
           </div>
         )}
@@ -735,6 +672,9 @@ const App: React.FC = () => {
   const [prompts, setPrompts] = useState<string[]>([]);
   const [results, setResults] = useState<GameResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [promptCategories, setPromptCategories] = useState<
+    Record<string, string>
+  >({});
 
   const startGame = async (
     duration: number,
@@ -743,49 +683,52 @@ const App: React.FC = () => {
     try {
       setIsLoading(true);
       const allPrompts: string[] = [];
-      const promptCategories = new Map<string, string>();
+      const promptsPerCategory = Math.ceil(50 / categories.length);
+      const _promptCategories: Record<string, string> = {};
 
-      const promptsPerCategory = Math.ceil(30 / categories.length);
+      if (categories.length === 1 && categories[0].id === "misc") {
+        categories = ALL_CATEGORIES.filter(
+          (c) => c.id !== "custom" && c.id !== "misc"
+        );
+      }
 
       for (const category of categories) {
-        // Special handling for "misc" category
-        let promptContent = category.prompt;
-        if (category.id === "misc") {
-          // Get all categories except misc and custom
-          const allCategories = ALL_CATEGORIES.filter(
-            (c) => !["misc", "custom"].includes(c.id)
-          )
-            .map((c) => c.prompt)
-            .join(", ");
+        let categoryPrompts: string[] = [];
 
-          promptContent = `mix of: ${allCategories}`;
+        if (category.id === "custom") {
+          // Use ChatGPT for custom categories
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "user",
+                content: BASE_PROMPT.replace(
+                  "{count}",
+                  promptsPerCategory.toString()
+                )
+                  .replace("{category}", category.prompt)
+                  .replace("{exclusions}", ""),
+              },
+            ],
+            temperature: 1.5,
+          });
+
+          categoryPrompts =
+            completion.choices[0].message.content
+              ?.split("\n")
+              .map((line) => line.replace(/^\d+\.\s*/, ""))
+              .filter(Boolean) || [];
+        } else {
+          // Use predefined options for non-custom categories
+          categoryPrompts = getRandomOptionsForCategory(
+            category.id,
+            promptsPerCategory
+          );
         }
-
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "user",
-              content: BASE_PROMPT.replace(
-                "{count}",
-                promptsPerCategory.toString()
-              )
-                .replace("{category}", promptContent)
-                .replace("{exclusions}", ""),
-            },
-          ],
-          temperature: 1.5,
-        });
-
-        const categoryPrompts =
-          completion.choices[0].message.content
-            ?.split("\n")
-            .map((line) => line.replace(/^\d+\.\s*/, ""))
-            .filter(Boolean) || [];
 
         // Add each prompt to the category mapping
         categoryPrompts.forEach((prompt) => {
-          promptCategories.set(prompt, category.name);
+          _promptCategories[prompt] = category.name;
         });
 
         allPrompts.push(...categoryPrompts);
@@ -793,6 +736,7 @@ const App: React.FC = () => {
 
       const shuffledPrompts = shuffleArray(allPrompts);
       setPrompts(shuffledPrompts);
+      setPromptCategories(_promptCategories);
       setGameConfig({ duration, categories });
       setGameState("playing");
     } catch (error) {
@@ -825,6 +769,7 @@ const App: React.FC = () => {
           initialPrompts={prompts}
           category={gameConfig.categories[0]}
           onGameEnd={endGame}
+          promptCategories={promptCategories}
         />
       )}
       {gameState === "end" && (
