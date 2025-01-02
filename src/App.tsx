@@ -814,21 +814,6 @@ const App: React.FC = () => {
     setResults([]);
   };
 
-  useEffect(() => {
-    // Handle iOS PWA status bar height
-    const root = document.documentElement;
-    const setAppHeight = () => {
-      root.style.setProperty("--app-height", `${window.innerHeight}px`);
-    };
-
-    window.addEventListener("resize", setAppHeight);
-    setAppHeight();
-
-    return () => {
-      window.removeEventListener("resize", setAppHeight);
-    };
-  }, []);
-
   return (
     <div className="h-[var(--app-height)] overflow-hidden">
       {gameState === "setup" && (
