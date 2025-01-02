@@ -58,8 +58,8 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 
 const BASE_PROMPT = `Generate exactly {count} {category} for a game of charades.
 Format: One item per line, no numbers, no extra text.
-Keep items simple and well-known.
-Items should be easy to act out.
+Keep items simple, and don't only include the most popular items (otherwise, it's the same every time).
+Items should be easy to describe or act out.
 Do not include any introductory text or explanations.
 {exclusions}`;
 
@@ -745,7 +745,7 @@ const App: React.FC = () => {
       const allPrompts: string[] = [];
       const promptCategories = new Map<string, string>();
 
-      const promptsPerCategory = Math.ceil(60 / categories.length);
+      const promptsPerCategory = Math.ceil(30 / categories.length);
 
       for (const category of categories) {
         // Special handling for "misc" category
@@ -774,7 +774,7 @@ const App: React.FC = () => {
                 .replace("{exclusions}", ""),
             },
           ],
-          temperature: 1.5,
+          temperature: 2,
         });
 
         const categoryPrompts =
