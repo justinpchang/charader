@@ -642,7 +642,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   }
 
   return (
-    <div className="flex flex-col items-center justify-between h-screen bg-purple-50">
+    <div className="flex flex-col items-center justify-between min-h-screen bg-purple-50">
       <div className="w-full p-4 bg-purple-600 text-white">
         <div className="flex justify-center items-center text-2xl">
           <Timer className="mr-2" />
@@ -815,7 +815,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="min-h-screen">
       {gameState === "setup" && (
         <GameSetup onStartGame={startGame} isLoading={isLoading} />
       )}
