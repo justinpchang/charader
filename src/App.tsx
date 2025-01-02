@@ -774,7 +774,7 @@ const App: React.FC = () => {
                 .replace("{exclusions}", ""),
             },
           ],
-          temperature: 2,
+          temperature: 1.5,
         });
 
         const categoryPrompts =
