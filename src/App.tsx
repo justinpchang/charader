@@ -814,16 +814,7 @@ const App: React.FC = () => {
     setResults([]);
   };
 
-  const preventScrolling = (e: TouchEvent) => {
-    e.preventDefault();
-  };
-
   useEffect(() => {
-    // Prevent scrolling/bouncing on iOS
-    document.addEventListener("touchmove", preventScrolling, {
-      passive: false,
-    });
-
     // Handle iOS PWA status bar height
     const root = document.documentElement;
     const setAppHeight = () => {
@@ -834,7 +825,6 @@ const App: React.FC = () => {
     setAppHeight();
 
     return () => {
-      document.removeEventListener("touchmove", preventScrolling);
       window.removeEventListener("resize", setAppHeight);
     };
   }, []);
