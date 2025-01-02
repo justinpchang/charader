@@ -815,7 +815,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="h-[var(--app-height)] overflow-hidden">
+    <div>
       {gameState === "setup" && (
         <GameSetup onStartGame={startGame} isLoading={isLoading} />
       )}
