@@ -240,7 +240,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onStartGame, isLoading }) => {
 
   return (
     <div
-      className={`flex flex-col items-center justify-center min-h-screen ${theme.accent} p-6`}
+      className={`flex flex-col items-center justify-start min-h-screen ${theme.accent} p-6`}
     >
       <div className="w-full max-w-md space-y-8">
         <h1
