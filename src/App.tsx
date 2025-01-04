@@ -203,6 +203,9 @@ const GameSetup: React.FC<GameSetupProps> = ({ onStartGame, isLoading }) => {
               <option value={0.5}>30 seconds</option>
               <option value={1}>1 minute</option>
               <option value={2}>2 minutes</option>
+              <option value={3}>3 minutes</option>
+              <option value={4}>4 minutes</option>
+              <option value={5}>5 minutes</option>
             </select>
           </label>
 
