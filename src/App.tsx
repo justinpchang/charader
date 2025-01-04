@@ -569,6 +569,19 @@ const GameScreen: React.FC<GameScreenProps> = ({
     return () => clearInterval(timer);
   }, [onGameEnd, results, showCountdown]);
 
+  useEffect(() => {
+    // Save original body style
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+
+    // Disable scroll
+    document.body.style.overflow = "hidden";
+
+    // Cleanup function to restore scroll
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []); // Empty dependency array since we want this to run once on mount
+
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
