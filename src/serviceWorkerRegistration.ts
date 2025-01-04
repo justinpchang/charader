@@ -3,12 +3,24 @@ export function register() {
     window.addEventListener("load", () => {
       navigator.serviceWorker
         .register("/sw.js")
-        .then(() => {
-          console.log("ServiceWorker registration successful");
+        .then((registration) => {
+          console.log("SW registered: ", registration);
         })
-        .catch((error) => {
-          console.error("ServiceWorker registration failed:", error);
+        .catch((registrationError) => {
+          console.log("SW registration failed: ", registrationError);
         });
     });
+  }
+}
+
+export function unregister() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        registration.unregister();
+      })
+      .catch((error) => {
+        console.error(error.message);
+      });
   }
 }

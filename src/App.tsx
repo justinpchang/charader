@@ -680,6 +680,10 @@ const GameEnd: React.FC<GameEndProps> = ({ results, onPlayAgain }) => {
   );
 };
 
+const isOnline = (): boolean => {
+  return navigator.onLine;
+};
+
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<"setup" | "playing" | "end">(
     "setup"
@@ -712,28 +716,33 @@ const App: React.FC = () => {
         let categoryPrompts: string[] = [];
 
         if (category.id === "custom") {
-          // Use ChatGPT for custom categories
-          const completion = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "user",
-                content: BASE_PROMPT.replace(
-                  "{count}",
-                  promptsPerCategory.toString()
-                )
-                  .replace("{category}", category.prompt)
-                  .replace("{exclusions}", ""),
-              },
-            ],
-            temperature: 1.5,
-          });
+          if (!isOnline()) {
+            // In offline mode, use a default message for custom categories
+            categoryPrompts = ["Custom categories require internet connection"];
+          } else {
+            // Use ChatGPT for custom categories when online
+            const completion = await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "user",
+                  content: BASE_PROMPT.replace(
+                    "{count}",
+                    promptsPerCategory.toString()
+                  )
+                    .replace("{category}", category.prompt)
+                    .replace("{exclusions}", ""),
+                },
+              ],
+              temperature: 1.5,
+            });
 
-          categoryPrompts =
-            completion.choices[0].message.content
-              ?.split("\n")
-              .map((line) => line.replace(/^\d+\.\s*/, ""))
-              .filter(Boolean) || [];
+            categoryPrompts =
+              completion.choices[0].message.content
+                ?.split("\n")
+                .map((line) => line.replace(/^\d+\.\s*/, ""))
+                .filter(Boolean) || [];
+          }
         } else {
           // Use predefined options for non-custom categories
           categoryPrompts = getRandomOptionsForCategory(

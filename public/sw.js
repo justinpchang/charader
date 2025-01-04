@@ -2,6 +2,10 @@ const CACHE_NAME = "charader-cache-v1";
 const urlsToCache = [
   "/",
   "/index.html",
+  "/src/main.tsx",
+  "/src/App.tsx",
+  "/src/categories.ts",
+  "/src/index.css",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
@@ -16,8 +20,11 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches
-      .match(event.request)
-      .then((response) => response || fetch(event.request))
+    caches.match(event.request).then((response) => {
+      if (response) {
+        return response;
+      }
+      return fetch(event.request);
+    })
   );
 });
