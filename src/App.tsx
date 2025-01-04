@@ -172,19 +172,6 @@ const GameSetup: React.FC<GameSetupProps> = ({ onStartGame, isLoading }) => {
     onStartGame(duration, selectedCategoryObjects);
   };
 
-  useEffect(() => {
-    // Save original body style
-    const originalStyle = window.getComputedStyle(document.body).overflow;
-
-    // Disable scroll
-    document.body.style.overflow = "hidden";
-
-    // Cleanup function to restore scroll
-    return () => {
-      document.body.style.overflow = originalStyle;
-    };
-  }, []); // Empty dependency array since we want this to run once on mount
-
   return (
     <div
       className={`flex flex-col items-center justify-start min-h-screen ${theme.accent} p-6`}
@@ -654,10 +641,11 @@ const GameScreen: React.FC<GameScreenProps> = ({
 
 const GameEnd: React.FC<GameEndProps> = ({ results, onPlayAgain }) => {
   const correctCount = results.filter((r) => r.correct).length;
+  const theme = useState(() => getRandomPastelTheme())[0];
 
   return (
-    <div className="min-h-screen bg-purple-50 p-6">
-      <div className="max-w-md mx-auto space-y-6">
+    <div className={`min-h-screen ${theme.accent} p-6`}>
+      <div className="w-full max-w-md mx-auto space-y-6">
         <h1 className="text-4xl font-bold text-center text-purple-800">
           Game Over!
         </h1>
@@ -666,7 +654,9 @@ const GameEnd: React.FC<GameEndProps> = ({ results, onPlayAgain }) => {
           Score: {correctCount} / {results.length}
         </div>
 
-        <div className="space-y-2">
+        <div
+          className={`max-h-72 overflow-y-auto space-y-2 ${theme.primary} rounded-xl border ${theme.border} p-4`}
+        >
           {results.map((result, index) => (
             <div
               key={index}
@@ -681,7 +671,7 @@ const GameEnd: React.FC<GameEndProps> = ({ results, onPlayAgain }) => {
 
         <button
           onClick={onPlayAgain}
-          className="w-full py-3 px-4 text-xl font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          className={`w-full py-4 px-6 text-xl font-semibold rounded-xl ${theme.secondary} ${theme.hover} focus:outline-none focus:ring-2 ${theme.focus} focus:ring-offset-2 shadow-lg transform transition-transform active:scale-[0.98]`}
         >
           <div className="flex items-center justify-center">
             <RotateCcw className="mr-2" />
@@ -698,6 +688,19 @@ const isOnline = (): boolean => {
 };
 
 const App: React.FC = () => {
+  useEffect(() => {
+    // Save original body style
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+
+    // Disable scroll
+    document.body.style.overflow = "hidden";
+
+    // Cleanup function to restore scroll
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []); // Empty dependency array since we want this to run once on mount
+
   const [gameState, setGameState] = useState<"setup" | "playing" | "end">(
     "setup"
   );
@@ -797,7 +800,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-hidden">
       {gameState === "setup" && (
         <GameSetup onStartGame={startGame} isLoading={isLoading} />
       )}
