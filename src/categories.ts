@@ -2477,11 +2477,22 @@ export const getRandomOptionsForCategory = (
   count: number
 ): string[] => {
   if (categoryId === "misc") {
-    // For misc, get random options from all categories that have options
-    const allOptions = CATEGORIES.filter(
+    // Get all categories with options
+    const validCategories = CATEGORIES.filter(
       (cat) => cat.options && cat.id !== "misc" && cat.id !== "custom"
-    ).flatMap((cat) => cat.options!);
-    return shuffleArray([...allOptions]).slice(0, count);
+    );
+
+    // Calculate how many items to take from each category
+    const itemsPerCategory = Math.ceil(count / validCategories.length);
+
+    // Get random items from each category and combine them
+    const selectedOptions = validCategories.flatMap((category) => {
+      const categoryOptions = category.options || [];
+      return shuffleArray([...categoryOptions]).slice(0, itemsPerCategory);
+    });
+
+    // Shuffle the combined results and trim to desired count
+    return shuffleArray(selectedOptions).slice(0, count);
   }
 
   if (categoryId === "custom") {
