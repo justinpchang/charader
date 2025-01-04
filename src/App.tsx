@@ -172,6 +172,19 @@ const GameSetup: React.FC<GameSetupProps> = ({ onStartGame, isLoading }) => {
     onStartGame(duration, selectedCategoryObjects);
   };
 
+  useEffect(() => {
+    // Save original body style
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+
+    // Disable scroll
+    document.body.style.overflow = "hidden";
+
+    // Cleanup function to restore scroll
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []); // Empty dependency array since we want this to run once on mount
+
   return (
     <div
       className={`flex flex-col items-center justify-start min-h-screen ${theme.accent} p-6`}
